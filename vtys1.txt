@@ -1,0 +1,327 @@
+DERS KODU      : BIMU3064
+ADI            : Görkem Çanakçılı
+ÖDEV NUMARASI  : 1. ÖDEV
+VERİTABANI     : MySQL
+
+
+
+CREATE TABLE sarki(sarkino integer PRIMARY KEY, ad char(10), tur char(10), sure integer, bestecino integer, yazarno integer);
+CREATE TABLE sarkici (sarkicino integer PRIMARY KEY, ad char(10), tur char(10), dogumTarih integer, dogumYer char(10));
+CREATE TABLE album(albumno integer PRIMARY KEY, ad char(10), yil integer, fiyat integer, sarkicino integer, stokAdet integer);
+CREATE TABLE albumdekiSarki(albumno integer, sarkino integer, sira integer, primary key (albumno, sarkino));
+CREATE TABLE besteci(bestecino integer PRIMARY KEY, ad char(10), tur char(10));
+CREATE TABLE sozyazari(yazarno integer PRIMARY KEY, ad char(10));
+
+INSERT INTO sarki(sarkino, ad, tur, sure, bestecino, yazarno) 
+VALUES (1,'mornings','edm',2,1,1),(2,'noons','classical',4,2,1), (3,'nights','edm',3,2,2);
+INSERT INTO sarkici(sarkicino, ad, tur, dogumTarih, dogumYer) 
+VALUES (1,'Mozart','classical',1756,'Avusturya'), (2,'Alesso','edm',1991,'Isvec');
+INSERT INTO album(albumno, ad, yil, fiyat, sarkicino, stokAdet) 
+VALUES (1,'classy',1800,100,1,0), (2,'dance',2015,50,2,10);
+INSERT INTO albumdekiSarki(albumno, sarkino, sira) 
+VALUES (1,2,1), (2,1,1), (2,3,2);
+INSERT INTO besteci(bestecino, ad, tur) 
+VALUES (1,'AliKurt','edm'), (2,'AyseKurt', 'mix');
+INSERT INTO sozyazari(yazarno,ad) 
+VALUES (1,'Axwell'), (2, 'Ingrosso');
+INSERT INTO sozyazari(yazarno,ad) 
+VALUES (1,'Axwell'), (2, 'Ingrosso');
+INSERT INTO besteci(bestecino, ad, tur) 
+VALUES (3,'AhmetKurt','arabesk');
+INSERT INTO sarkici(sarkicino,ad,tur,dogumTarih,dogumYer) 
+VALUES (4,'Yalin','pop',1985,'Istanbul');
+
+1)
+----------------------------------------------------------------------------------------------------------------------------------------
+SELECT DISTINCT ad
+    FROM sarki
+    WHERE tur = 'arabesk'
+    AND sure > 3
+    ORDER BY ad ASC;
+
++------+
+| ad   |
++------+
+| ates |
+| su   |
++------+
+2 rows in set (0.00 sec)
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+2)
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+INSERT INTO sarkici(sarkicino,ad,tur,dogumTarih,dogumYer) 
+VALUES (3,'AnkaraliNa','arabesk',1980,'Ankara');
+
+ (
+   SELECT * FROM sarkici 
+   WHERE dogumYer = 'Ankara'
+ ) 
+ UNION 
+  (
+    SELECT sarkici.sarkicino, sarkici.ad,sarkici.tur,sarkici.dogumTarih,sarkici.dogumYer 
+    FROM sarkici,album 
+    WHERE sarkici.sarkicino = album.sarkicino
+  );
+
++-----------+------------+-----------+------------+-----------+
+| sarkicino | ad         | tur       | dogumTarih | dogumYer  |
++-----------+------------+-----------+------------+-----------+
+|         3 | AnkaraliNa | arabesk   |       1980 | Ankara    |
+|         1 | Mozart     | classical |       1756 | Avusturya |
+|         2 | Alesso     | edm       |       1991 | Isvec     |
++-----------+------------+-----------+------------+-----------+
+3 rows in set (0.00 sec)
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+3)
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT sarkici.ad AS sarkicinin_adi, album.ad AS albumununadi, album.yil AS album_yili 
+FROM sarkici, album 
+WHERE sarkici.sarkicino = album.sarkicino;
++----------------+--------------+------------+
+| sarkicinin_adi | albumununadi | album_yili |
++----------------+--------------+------------+
+| Mozart         | classy       |       1800 |
+| Alesso         | dance        |       2015 |
++----------------+--------------+------------+
+2 rows in set (0.00 sec)
+
+
+SELECT sarkici.ad AS sarkicinin_adi, album.ad AS albumunadi, album.yil AS album_yili 
+FROM sarkici, album 
+WHERE sarkici.sarkicino 
+IN 
+ (
+   SELECT sarkici.sarkicino, album.albumno
+   FROM sarkici,album 
+   WHERE sarkici.sarkicino = album.sarkicino
+  );
++----------------+------------+------------+
+| sarkicinin_adi | albumunadi | album_yili |
++----------------+------------+------------+
+| Mozart         | classy     |       1800 |
+| Mozart         | dance      |       2015 |
+| Alesso         | classy     |       1800 |
+| Alesso         | dance      |       2015 |
++----------------+------------+------------+
+4 rows in set (0.00 sec)
+
+SELECT sarkici.ad AS sarkicinin_adi, album.ad AS albumunadi, album.yil AS album_yili 
+FROM sarkici, album 
+WHERE EXISTS (
+  SELECT sarkici.sarkicino 
+  FROM album 
+  WHERE sarkici.sarkicino = album.sarkicino
+ );
++----------------+------------+------------+
+| sarkicinin_adi | albumunadi | album_yili |
++----------------+------------+------------+
+| Mozart         | classy     |       1800 |
+| Mozart         | dance      |       2015 |
+| Alesso         | classy     |       1800 |
+| Alesso         | dance      |       2015 |
++----------------+------------+------------+
+4 rows in set (0.00 sec)
+
+
+SELECT sarkici.ad AS sarkicinin_adi, album.ad AS albumunadi, album.yil AS album_yili 
+FROM sarkici, album 
+WHERE sarkici.sarkicino  
+=SOME (
+        SELECT sarkici.sarkicino 
+	FROM sarkici,album 
+	WHERE sarkici.sarkicino = album.sarkicino
+      );
+
+
++----------------+------------+------------+
+| sarkicinin_adi | albumunadi | album_yili |
++----------------+------------+------------+
+| Mozart         | classy     |       1800 |
+| Mozart         | dance      |       2015 |
+| Alesso         | classy     |       1800 |
+| Alesso         | dance      |       2015 |
++----------------+------------+------------+
+4 rows in set (0.00 sec)
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+4)
+------------------------------------------------------------------------------------------------------------------------------------------
+
+SELECT sarkicino, ad 
+FROM sarkici 
+WHERE sarkicino 
+NOT IN 
+  (
+    SELECT 
+      sarkici.sarkicino 
+    FROM sarkici, album 
+    WHERE sarkici.sarkicino = album.sarkicino
+   );
++-----------+------------+
+| sarkicino | ad         |
++-----------+------------+
+|         3 | AnkaraliNa |
+|         4 | Yalin      |
++-----------+------------+
+2 rows in set (0.00 sec)
+
+SELECT sarkicino, ad 
+FROM sarkici 
+WHERE sarkicino 
+!=ALL 
+ (
+   SELECT sarkici.sarkicino 
+   FROM sarkici, album 
+   WHERE sarkici.sarkicino = album.sarkicino
+  );
++-----------+------------+
+| sarkicino | ad         |
++-----------+------------+
+|         3 | AnkaraliNa |
+|         4 | Yalin      |
++-----------+------------+
+2 rows in set (0.00 sec)
+
+SELECT sarkicino, ad 
+FROM sarkici 
+WHERE NOT EXISTS 
+ (
+  SELECT * 
+  FROM album 
+  WHERE sarkici.sarkicino = album.sarkicino
+ );
++-----------+------------+
+| sarkicino | ad         |
++-----------+------------+
+|         3 | AnkaraliNa |
+|         4 | Yalin      |
++-----------+------------+
+2 rows in set (0.00 sec)
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+5)
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SELECT album.albumno, album.ad,album.fiyat, sarkici.ad AS sarkici_adi, COUNT(albumdekisarki.sarkino), SUM(sarki.sure) 
+FROM sarkici,album,albumdekisarki,sarki 
+WHERE sarkici.sarkicino = album.sarkicino AND album.albumno = albumdekisarki.albumno AND albumdekisarki.sarkino = sarki.sarkino 
+GROUP BY album.albumno;
++---------+--------+-------+-------------+-------------------------------+-----------------+
+| albumno | ad     | fiyat | sarkici_adi | count(albumdekisarki.sarkino) | sum(sarki.sure) |
++---------+--------+-------+-------------+-------------------------------+-----------------+
+|       1 | classy |   100 | Mozart      |                             1 |               4 |
+|       2 | dance  |    50 | Alesso      |                             2 |               5 |
++---------+--------+-------+-------------+-------------------------------+-----------------+
+2 rows in set (0.00 sec)
+
+------------------------------------------------------------------------------------------
+
+6)
+-----------------------------------------------------------------------------------------------------------------------
+
+INSERT INTO sarki(sarkino,ad,tur,sure,bestecino,yazarno) 
+VALUES(6,'hava','arabesk',3,4,2),(7,'hava2','arabesk',3,4,2),(8,'hava3','arabesk',3,4,2),(9,'hava4','arabesk',3,4,2),(10,'hava5','arabesk',3,4,2);
+Query OK, 5 rows affected (0.37 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+
+
+INSERT INTO besteci(bestecino,ad,tur) 
+VALUES(4,'AsikVeysi','arabesk');
+Query OK, 1 row affected (0.37 sec)
+
+SELECT besteci.ad, COUNT(sarki.bestecino) AS 'sarki_sayisi' 
+FROM besteci,sarki 
+WHERE besteci.tur = 'arabesk' AND sarki.bestecino = besteci.bestecino 
+GROUP BY besteci.bestecino 
+HAVING COUNT(sarki.bestecino) > 4;
+
++-----------+--------------+
+| ad        | sarki_sayisi |
++-----------+--------------+
+| AsikVeysi |            5 |
++-----------+--------------+
+1 row in set (0.00 sec)
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+7)
+-------------------------------------------------------------------------------------------------------------------------------------------
+SELECT sarkici.ad, COUNT(album.albumno) AS 'album_sayisi' 
+FROM sarkici,album 
+WHERE sarkici.sarkicino = album.sarkicino 
+GROUP BY sarkici.sarkicino;
++--------+--------------+
+| ad     | album_sayisi |
++--------+--------------+
+| Mozart |            2 |
+| Alesso |            1 |
++--------+--------------+
+2 rows in set (0.00 sec)
+
+
+SELECT MAX(album_sayisi) AS max_album 
+FROM 
+  ( 
+    SELECT sarkici.ad, COUNT(album.albumno) AS 'album_sayisi' 
+    FROM sarkici,album 
+    WHERE sarkici.sarkicino = album.sarkicino 
+    GROUP BY sarkici.sarkicino
+   ) 
+AS temp, sarkici;
++-----------+
+| max_album |
++-----------+
+|         2 |
++-----------+
+1 row in set (0.28 sec)
+
+
+SELECT sarkici.ad 
+FROM sarkici, 
+(
+ SELECT sarkici.ad AS isim, 
+ COUNT(album.albumno) AS 'album_sayisi' 
+ FROM sarkici,album 
+ WHERE sarkici.sarkicino = album.sarkicino 
+ GROUP BY sarkici.sarkicino
+) AS temp1 
+WHERE temp1.album_sayisi >= (SELECT MAX(album_sayisi) AS max_album 
+FROM (SELECT sarkici.ad, COUNT(album.albumno) AS 'album_sayisi' 
+FROM sarkici,album WHERE sarkici.sarkicino = album.sarkicino 
+GROUP BY sarkici.sarkicino) AS temp, sarkici) AND temp1.isim = sarkici.ad;
++--------+
+| ad     |
++--------+
+| Mozart |
++--------+
+1 row in set (0.00 sec)
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+8)
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SELECT sozyazari.yazarno, sozyazari.ad 
+FROM sozyazari,sarki 
+WHERE sarki.tur = 'arabesk' AND sarki.yazarno = sozyazari.yazarno 
+GROUP BY sozyazari.yazarno;
++---------+----------+
+| yazarno | ad       |
++---------+----------+
+|       1 | Axwell   |
+|       2 | Ingrosso |
++---------+----------+
+2 rows in set (0.00 sec)
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
